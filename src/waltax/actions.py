@@ -1,7 +1,5 @@
-from flask import Blueprint, jsonify
-
-
-waltax = Blueprint("waltax", __name__, url_prefix="/waltax")
+from flask import jsonify
+from waltax.blueprints import waltax
 
 
 @waltax.route("/calculate", methods=["GET"])

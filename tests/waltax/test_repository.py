@@ -1,6 +1,20 @@
 import pytest
 from tests.conftest import FakeTaxApi
 from waltax.repository import TaxBracketRepository
+from decimal import Decimal
+
+"""
+response_template = {
+    "total_taxes_owed": Decimal,
+    "taxes_owed_per_bracket": {
+        "<rate>" {
+            "min": Decimal,
+            "max": Decimal,
+            "owed": Decimal,
+        },
+    },
+}
+"""
 
 
 class TestTaxBracketRepository:
@@ -19,9 +33,22 @@ class TestTaxBracketRepository:
     @pytest.mark.parametrize(
         "income, year, expected",
         [
-            (50000, 2022, {"total_tax_owed": 7500}),
-            (100000, 2022, {"total_tax_owed": 17739.17}),
+            (
+                50000,
+                2022,
+                {
+                    "total_taxes_owed": Decimal(7500),
+                    "marginal_rate": None,  # not sure yet
+                    "taxes_owed_per_bracket": {
+                        Decimal(0.25): {
+                            "min": Decimal(0),
+                            "max": Decimal(50197),
+                            "owed": Decimal(7500),
+                        },
+                    },
+                },
+            ),
         ],
     )
-    def test_yearly_calculation(self, repository, income, year, expected):
+    def test_calculate_rate(self, repository, income, year, expected):
         assert repository.calculate_rate(income, year) == expected

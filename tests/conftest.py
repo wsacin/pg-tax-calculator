@@ -7,6 +7,9 @@ can be modularized depending on the domain needs.
 import pytest
 
 
+from waltax.apis import TaxApiClient
+
+
 @pytest.fixture
 def tax_brackets_2022_response():
     return {
@@ -25,7 +28,7 @@ def error_response():
     pass
 
 
-class FakeTaxApi:
+class FakeTaxApi(TaxApiClient):
 
-    def get_rates(year):
-        return tax_brackets_2022
+    def get_rates(self, year):
+        return tax_brackets_2022_response()

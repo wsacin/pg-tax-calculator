@@ -6,7 +6,5 @@ app = Flask(__name__)
 
 app.register_blueprint(waltax)
 
-
 if __name__ == "__main__":
-    # whatever other config/setup to be done later
-    app.run(host="0.0.0.0")
+    app.run("0.0.0.0")
