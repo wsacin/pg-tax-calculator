@@ -5,7 +5,7 @@ from waltax.apis import TaxApiClient
 class TaxBracketRepository:
 
     def __init__(self, api_client=TaxApiClient):
-        self._tax_api = TaxApiClient()
+        self._tax_api = api_client()
 
     def get_rates(self, year):
         # for now a fake call with no error handling
@@ -19,25 +19,28 @@ class TaxBracketRepository:
         print(f"Rates for 2022: {brackets}")
         """
         Response:
-
         {
-            "total_taxes_owed": number,
+            "total_taxes_owed": Decimal,
+            "effective_rate": Decimal,
             "taxes_owed_per_bracket": {
-                min:,
-                max:
-                owed:
+                <rate>: {
+                    min:  Decimal,
+                    max:  Decimal,
+                    owed: Decimal,
+                }
             }
         }
         """
 
         payload = {
-            "total_taxes_owed": Decimal(0),
-            "marginal_tax_rate": None,
+            "total_taxes_owed": Decimal(0.00),
+            "effective_rate": None,
             "taxes_owed_per_bracket": {},
         }
+        total_income = annual_income
         for bracket in brackets:
-            tax_min = Decimal(bracket.get("min", 0)) if "min" in bracket else None
-            tax_max = Decimal(bracket.get("max", 0)) if "max" in bracket else None
+            tax_min = Decimal(bracket.get("min", 0.00)) if "min" in bracket else None
+            tax_max = Decimal(bracket.get("max", 0.00)) if "max" in bracket else None
             rate = Decimal(bracket["rate"])
             chunk = (
                 annual_income if tax_max and annual_income <= tax_max else annual_income
@@ -57,5 +60,8 @@ class TaxBracketRepository:
 
             annual_income -= chunk
             print(f"Remaining taxable: {annual_income}")
+
+        # calculate effective_rate
+        payload["effect_rate"] = payload["total_taxes_owed"] / total_income
 
         return payload

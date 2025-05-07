@@ -34,16 +34,16 @@ class TestTaxBracketRepository:
         "income, year, expected",
         [
             (
-                50000,
+                Decimal(50000.00),
                 2022,
                 {
-                    "total_taxes_owed": Decimal(7500),
+                    "total_taxes_owed": Decimal(7500.00),
                     "marginal_rate": None,  # not sure yet
                     "taxes_owed_per_bracket": {
                         Decimal(0.25): {
-                            "min": Decimal(0),
-                            "max": Decimal(50197),
-                            "owed": Decimal(7500),
+                            "min": Decimal(0.00),
+                            "max": Decimal(50197.00),
+                            "owed": Decimal(7500.00),
                         },
                     },
                 },

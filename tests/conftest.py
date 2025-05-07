@@ -6,11 +6,10 @@ can be modularized depending on the domain needs.
 
 import pytest
 
-
 from waltax.apis import TaxApiClient
 
 
-@pytest.fixture
+# @pytest.fixture
 def tax_brackets_2022_response():
     return {
         "tax_brackets": [
