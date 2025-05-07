@@ -1,2 +1,5 @@
 .python-version
 *.swp
+.venv
+__pycache__/
+poetry.toml
