@@ -39,8 +39,13 @@ class TaxBracketRepository:
         }
         total_income = annual_income
         for bracket in brackets:
-            tax_min = Decimal(bracket.get("min", 0.00)) if "min" in bracket else None
-            tax_max = Decimal(bracket.get("max", 0.00)) if "max" in bracket else None
+
+            tax_min = bracket.get("min")
+
+            if annual_income <= 0:
+                break
+
+            tax_max = bracket.get("max")
             rate = Decimal(bracket["rate"])
             chunk = (
                 annual_income if tax_max and annual_income <= tax_max else annual_income
@@ -51,7 +56,7 @@ class TaxBracketRepository:
             payload["total_taxes_owed"] += amount_owed
             print(f"Amount owed: {amount_owed}")
 
-            payload["taxes_owed_per_bracket"][Decimal(0.25)] = {
+            payload["taxes_owed_per_bracket"][rate] = {
                 "min": tax_min,
                 "max": tax_max,
                 "owed": amount_owed,
@@ -62,6 +67,6 @@ class TaxBracketRepository:
             print(f"Remaining taxable: {annual_income}")
 
         # calculate effective_rate
-        payload["effect_rate"] = payload["total_taxes_owed"] / total_income
+        payload["effective_rate"] = payload["total_taxes_owed"] / total_income
 
         return payload
