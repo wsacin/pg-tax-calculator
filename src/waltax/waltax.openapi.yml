@@ -1,0 +1,118 @@
+openapi: 3.0.3
+info:
+  title: Tax Calculation API
+  description: API to calculate payable taxes based on income and tax year.
+  version: "1.0.0"
+paths:
+  /waltax/calculate_payable_taxes:
+    get:
+      summary: Calculate Payable Taxes
+      description: Calculates the payable taxes based on the provided income and tax year.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                income:
+                  type: number
+                  format: float
+                  description: The income for which the taxes need to be calculated.
+                tax_year:
+                  type: integer
+                  description: The tax year for which the calculation is to be performed.
+              required:
+                - income
+                - tax_year
+      responses:
+        "200":
+          description: Successful calculation of taxes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  effective_rate:
+                    type: string
+                    description: The overall effective tax rate.
+                  taxes_owed_per_bracket:
+                    type: object
+                    description: Breakdown of taxes owed per tax bracket.
+                    additionalProperties:
+                      type: object
+                      properties:
+                        max:
+                          type: string
+                          description: Maximum income for the bracket (optional for the highest bracket).
+                        min:
+                          type: string
+                          description: Minimum income for the bracket.
+                        owed:
+                          type: string
+                          description: Taxes owed for the bracket.
+                  total_taxes_owed:
+                    type: string
+                    description: Total taxes owed across all brackets.
+              example:
+                effective_rate: "0.32"
+                taxes_owed_per_bracket:
+                  "0.15":
+                    max: "50197"
+                    min: "0.00"
+                    owed: "7529.55"
+                  "0.205":
+                    max: "100392"
+                    min: "50197.00"
+                    owed: "10289.98"
+                  "0.26":
+                    max: "155625"
+                    min: "100392.00"
+                    owed: "14360.58"
+                  "0.29":
+                    max: "221708"
+                    min: "155625.00"
+                    owed: "19164.07"
+                  "0.33":
+                    min: "221708.00"
+                    owed: "334243.47"
+                total_taxes_owed: "385587.65"
+        "400":
+          description: Validation error in the calculated response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  error:
+                    type: string
+              example:
+                message:
+                  income:
+                    - Not a valid integer.
+                  tax_year:
+                    - Not a valid integer.
+        "409":
+          description: Conflict error due to invalid inputs like unsupported tax year or invalid income.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Tax year 1990 is not supported"
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "An unexpected error occurred"

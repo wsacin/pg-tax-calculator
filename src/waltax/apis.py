@@ -6,6 +6,7 @@ Contains:
     * TaxApiClient -> Fetches tax rate brackets.
 """
 
+import time
 import requests
 
 
@@ -13,7 +14,8 @@ class TaxApiClient:
     # TODO: Move this into a config, depending if it
     #       lives in the same docker net or not.
     HOST_URL = "http://localhost:5001/"
-    BASE_URL = HOST_URL + "/tax-calculator/tax-year/{year}"
+    ENDPOINT_PATH = "/tax-calculator/tax-year/{year}"
+    BASE_URL = HOST_URL + ENDPOINT_PATH
     BACKOFF_STAGES = [0.2, 0.5, 1.5]
 
     def get_rates(self, year):
@@ -30,4 +32,8 @@ class TaxApiClient:
                 # let the repository randle serialization
                 return response.text
 
-        raise RuntimeError(f"Could not get response from {base_url}")
+            time.sleep(t)
+
+        raise ValueError(
+            f"Could not get response from {self.ENDPOINT_PATH.format(year=year)}"
+        )
