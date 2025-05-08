@@ -1,5 +1,10 @@
-from decimal import Decimal
+import logging
+from waltax.utils import quantized_decimal
 from waltax.apis import TaxApiClient
+from decimal import Decimal
+
+
+logger = logging.Logger(__name__)
 
 
 class TaxBracketRepository:
@@ -8,15 +13,6 @@ class TaxBracketRepository:
         self._tax_api = api_client()
 
     def get_rates(self, year):
-        # for now a fake call with no error handling
-        return self._tax_api.get_rates(year)
-
-    def calculate_rate(self, annual_income, year):
-        print(f"Start income: {annual_income}")
-
-        brackets = self.get_rates(year)["tax_brackets"]
-
-        print(f"Rates for 2022: {brackets}")
         """
         Response:
         {
@@ -31,42 +27,74 @@ class TaxBracketRepository:
             }
         }
         """
+        # for now a fake call with no error handling
+        return self._tax_api.get_rates(year)
+
+    def _calculate_tax_delta(self, bracket_max, bracket_min, annual_income):
+        if bracket_max is None:
+            taxable_max = annual_income
+        elif annual_income > bracket_max:
+            taxable_max = bracket_max
+        else:
+            taxable_max = annual_income
+
+        return taxable_max - bracket_min
+
+    def calculate_rate(self, annual_income, year):
+        logger.info("Start income: %.2f" % annual_income)
+
+        brackets = self.get_rates(year)["tax_brackets"]
 
         payload = {
-            "total_taxes_owed": Decimal(0.00),
-            "effective_rate": None,
-            "taxes_owed_per_bracket": {},
+            "total_taxes_owed": Decimal("0.00"),
+            "effective_rate": Decimal("0.00"),
         }
-        total_income = annual_income
+
+        if annual_income == 0:
+            return payload
+
+        payload["taxes_owed_per_bracket"] = {}
+
+        remaining_income = Decimal(annual_income)
+        quantized_income = Decimal(annual_income)
+
         for bracket in brackets:
-
-            tax_min = bracket.get("min")
-
-            if annual_income <= 0:
+            if remaining_income <= 0:
                 break
 
-            tax_max = bracket.get("max")
-            rate = Decimal(bracket["rate"])
-            chunk = (
-                annual_income if tax_max and annual_income <= tax_max else annual_income
+            bracket_min = bracket.get("min")
+            bracket_max = bracket.get("max")
+            rate_key = bracket["rate"]
+            rate = Decimal(rate_key)
+
+            tax_delta = self._calculate_tax_delta(
+                bracket_max, bracket_min, quantized_income
             )
 
-            amount_owed = rate * chunk
+            amount_owed = rate * tax_delta
+            logger.info(f"Amount owed: %.2f" % amount_owed)
 
             payload["total_taxes_owed"] += amount_owed
-            print(f"Amount owed: {amount_owed}")
 
-            payload["taxes_owed_per_bracket"][rate] = {
-                "min": tax_min,
-                "max": tax_max,
-                "owed": amount_owed,
+            bracket_breakdown = {
+                "min": quantized_decimal(bracket_min),
+                "owed": quantized_decimal(amount_owed),
             }
-            print(f"Amount owed in this bracket: {amount_owed}")
+            if bracket_max:
+                bracket_breakdown["max"] = bracket_max
+            payload["taxes_owed_per_bracket"][rate_key] = bracket_breakdown
 
-            annual_income -= chunk
-            print(f"Remaining taxable: {annual_income}")
+            logger.info(f"Amount owed in this bracket: %.2f" % amount_owed)
+
+            remaining_income -= tax_delta
+            logger.info(f"Remaining taxable: %.2f" % remaining_income)
 
         # calculate effective_rate
-        payload["effective_rate"] = payload["total_taxes_owed"] / total_income
+        payload["effective_rate"] = quantized_decimal(
+            payload["total_taxes_owed"] / quantized_income
+        )
+
+        # quantize
+        payload["total_taxes_owed"] = quantized_decimal(payload["total_taxes_owed"])
 
         return payload

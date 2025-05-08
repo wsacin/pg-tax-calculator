@@ -9,5 +9,4 @@ app.register_blueprint(waltax)
 
 if __name__ == "__main__":
 
-    getcontext().prec = 2
     app.run("0.0.0.0")
