@@ -2,9 +2,23 @@ import logging
 from waltax.utils import quantized_decimal
 from waltax.apis import TaxApiClient
 from decimal import Decimal
+from marshmallow import Schema, fields
 
 
 logger = logging.Logger(__name__)
+
+
+class TaxBracketSchema(Schema):
+    max = fields.Decimal()
+    min = fields.Decimal()
+    rate = fields.Method(serialize="load_rate", deserialize="load_rate")
+
+    def load_rate(self, obj):
+        return str(obj)
+
+
+class TaxYearSchema(Schema):
+    tax_brackets = fields.List(fields.Nested(TaxBracketSchema))
 
 
 class TaxBracketRepository:
@@ -14,26 +28,19 @@ class TaxBracketRepository:
 
     def get_rates(self, year):
         """
-        Response:
-        {
-            "total_taxes_owed": Decimal,
-            "effective_rate": Decimal,
-            "taxes_owed_per_bracket": {
-                <rate>: {
-                    min:  Decimal,
-                    max:  Decimal,
-                    owed: Decimal,
-                }
-            }
-        }
+        Calls API to get tax brackets for specific year.
         """
-        # for now a fake call with no error handling
-        return self._tax_api.get_rates(year)
+        import ipdb
+
+        ipdb.set_trace()
+        rates_content = self._tax_api.get_rates(year)
+
+        rates = TaxYearSchema().loads(rates_content)
+
+        return rates
 
     def _calculate_tax_delta(self, bracket_max, bracket_min, annual_income):
-        if bracket_max is None:
-            taxable_max = annual_income
-        elif annual_income > bracket_max:
+        if bracket_max and annual_income > bracket_max:
             taxable_max = bracket_max
         else:
             taxable_max = annual_income

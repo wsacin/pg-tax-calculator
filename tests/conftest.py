@@ -4,47 +4,31 @@ can be used throughout the whole project. This package
 can be modularized depending on the domain needs.
 """
 
-import pytest
-
+import json
 from waltax.apis import TaxApiClient
-from decimal import Decimal, getcontext
 
 
-# @pytest.fixture
 def tax_brackets_2022_response():
-    return {
-        "tax_brackets": [
-            {
-                "min": Decimal("0.00"),
-                "max": Decimal("50197.00"),
-                "rate": "0.15",
-            },
-            {
-                "min": Decimal("50197.00"),
-                "max": Decimal("100392.00"),
-                "rate": "0.205",
-            },
-            {
-                "min": Decimal("100392.00"),
-                "max": Decimal("155625.00"),
-                "rate": "0.26",
-            },
-            {
-                "min": Decimal("155625.00"),
-                "max": Decimal("221708.00"),
-                "rate": "0.29",
-            },
-            {
-                "min": Decimal("221708.00"),
-                "rate": "0.33",
-            },
-        ]
-    }
+    """
+    This fixture represents the response.text that comes
+    from a successfull request made to the API.
+    """
 
-
-@pytest.fixture
-def error_response():
-    pass
+    return json.dumps(
+        {
+            "tax_brackets": [
+                {"min": 0.00, "max": 50197.00, "rate": 0.15},
+                {
+                    "min": 50197.00,
+                    "max": 100392.00,
+                    "rate": 0.205,
+                },
+                {"min": 100392.00, "max": 155625.00, "rate": 0.26},
+                {"min": 155625.00, "max": 221708.00, "rate": 0.29},
+                {"min": 221708.00, "rate": 0.33},
+            ]
+        }
+    )
 
 
 class FakeTaxApi(TaxApiClient):

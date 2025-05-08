@@ -6,41 +6,28 @@ Contains:
     * TaxApiClient -> Fetches tax rate brackets.
 """
 
-from decimal import Decimal
+import requests
 
 
 class TaxApiClient:
-    BASE_URL = "/tax-calculator/tax-year/{year}"
+    # TODO: Move this into a config, depending if it
+    #       lives in the same docker net or not.
+    HOST_URL = "http://localhost:5001/"
+    BASE_URL = HOST_URL + "/tax-calculator/tax-year/{year}"
+    BACKOFF_STAGES = [0.2, 0.5, 1.5]
 
     def get_rates(self, year):
-        # mock request.
-        # This might serve as a contract test initiallyo.
-        # return requests.get(self.BASE_URL.format(year=year))
-        return {
-            "tax_brackets": [
-                {
-                    "min": Decimal("0.00"),
-                    "max": Decimal("50197.00"),
-                    "rate": "0.15",
-                },
-                {
-                    "min": Decimal("50197.00"),
-                    "max": Decimal("100392.00"),
-                    "rate": "0.205",
-                },
-                {
-                    "min": Decimal("100392.00"),
-                    "max": Decimal("155625.00"),
-                    "rate": "0.26",
-                },
-                {
-                    "min": Decimal("155625.00"),
-                    "max": Decimal("221708.00"),
-                    "rate": "0.29",
-                },
-                {
-                    "min": Decimal("221708.00"),
-                    "rate": "0.33",
-                },
-            ]
-        }
+        """
+        Calls the endpoint under BASE_URL. If request fails,
+        backs off periodically until RuntimeError is raised.
+        """
+        base_url = self.BASE_URL.format(year=year)
+
+        for t in self.BACKOFF_STAGES:
+            response = requests.get(base_url)
+
+            if response.status_code == 200:
+                # let the repository randle serialization
+                return response.text
+
+        raise RuntimeError(f"Could not get response from {base_url}")

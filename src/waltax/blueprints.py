@@ -26,15 +26,19 @@ class BracketResponseSchema(Schema):
     )
 
 
-@waltax.route("/calculate", methods=["GET"])
-def calculate():
+@waltax.route("/calculate_payable_taxes", methods=["GET"])
+def calculate_payable_taxes():
     repository = TaxBracketRepository()
 
     # load/validate arguments
     # TODO:: parse request body and properly raise with status
-    body = CalculatePayloadSchema().load(request.json)
+    body = CalculatePayloadSchema().loads(request.data)
+    income, tax_year = body["income"], body["tax_year"]
 
-    calculated_rates = repository.calculate_rate(body["income"], body["tax_year"])
+    try:
+        calculated_rates = repository.calculate_rate(income, tax_year)
+    except RuntimeError as ex:
+        return jsonify({"error": ex.args[0].message}), 409
 
     # validate calculation
     errors = BracketResponseSchema().validate(calculated_rates)
